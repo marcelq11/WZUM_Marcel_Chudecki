@@ -36,6 +36,8 @@ letters = {
     }
 reverse_letters = {value: key for key, value in letters.items()}
 
+arm = {"Left": 0, "Right": 1}
+
 def load_data(path, temp):
     # dropping 0.3% of outliers of given data
     if temp == True:
@@ -43,8 +45,9 @@ def load_data(path, temp):
         # dropping columns with world_landmark
         data = data[[col for col in data.columns if not col.startswith("world_landmark_")]]
         data["letter"] = data["letter"].map(letters)
+        data["handedness.label"] = data["handedness.label"].map(arm)
         # dropping first column and handedness.score
-        data = data.drop(columns = [data.columns[0], "handedness.score", "handedness.label"])
+        data = data.drop(columns = [data.columns[0], "handedness.score"])
         for col in data.columns:
             lower_percentile = data[col].quantile(0.003)
             upper_percentile = data[col].quantile(0.997)
@@ -60,14 +63,17 @@ def load_data(path, temp):
 
         X = np.array(X)
         y = np.array(y)
+
+        print(data.describe())
         return X, y
     else:
         data = path
         # dropping columns with world_landmark
         data = data[[col for col in data.columns if not col.startswith("world_landmark_")]]
         # mapping letters and hands to numbers
-        data = data.drop(columns = [data.columns[0], "handedness"])
-        # data["handedness"] = data["handedness"].map(arm)
+        data["handedness.label"] = data["handedness.label"].map(arm)
+        data = data.drop(columns = [data.columns[0], "handedness.score"])
+        print(data.describe())
         return data
 
 def perform_processing(data: pd.DataFrame) -> pd.DataFrame:
@@ -86,6 +92,7 @@ def perform_processing(data: pd.DataFrame) -> pd.DataFrame:
 
     #testing data
     X_ext = load_data(data, False)
+
     pred = clf.predict(X_ext)
 
     # reverse mapping numbers to letters
